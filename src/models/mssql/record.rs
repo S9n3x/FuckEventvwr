@@ -22,9 +22,19 @@ impl EventRecord for MssqlDetail {
             (m.event_id.title, CellValue::num(self.event_id)),
             (m.description.title, CellValue::text(self.description)),
             (m.event_type.title, CellValue::text(self.event_type)),
+            (m.result.title, CellValue::text(&self.result)),
             (
                 m.database_instance.title,
                 CellValue::text(&self.database_instance),
+            ),
+            (m.user.title, CellValue::text(&self.user)),
+            (
+                m.client_address.title,
+                CellValue::text(&self.client_address),
+            ),
+            (
+                m.failure_reason.title,
+                CellValue::text(&self.failure_reason),
             ),
             (m.raw_data.title, CellValue::text(&self.raw_data)),
         ]

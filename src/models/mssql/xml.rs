@@ -60,6 +60,8 @@ pub fn parse(xml: &str) -> Box<dyn EventRecord + Send> {
                 if let Ok(value) = text.decode() {
                     let value = value.trim();
                     if !value.is_empty() && value != "-" {
+                        assign_common_field(&mut detail, &current_name, value);
+                        extract_message_fields(&mut detail, value);
                         append_raw(&mut detail.raw_data, &current_name, value);
                     }
                 }
@@ -83,11 +85,121 @@ pub fn parse(xml: &str) -> Box<dyn EventRecord + Send> {
     detail.include = is_mssql_provider(&detail.provider) && is_security_event(detail.event_id);
     detail.database_instance = instance_name(&detail.provider);
     detail.event_type = event_type;
+    if detail.result.is_empty() {
+        detail.result = default_result(detail.event_id).to_owned();
+    }
     detail.description = description;
     if detail.raw_data.ends_with('\n') {
         detail.raw_data.pop();
     }
     Box::new(detail)
+}
+
+fn default_result(id: u16) -> &'static str {
+    match id {
+        18454 => "成功",
+        18452 | 18456 | 18470 => "失败",
+        17806 | 17832 | 17836 => "异常",
+        15281 => "已阻止",
+        15457 => "已变更",
+        33205 => "审计记录",
+        _ => "",
+    }
+}
+
+fn assign_common_field(detail: &mut MssqlDetail, name: &str, value: &str) {
+    if matches_name(
+        name,
+        &[
+            "LoginName",
+            "UserName",
+            "User",
+            "ServerPrincipalName",
+            "SessionServerPrincipalName",
+            "DatabasePrincipalName",
+            "PrincipalName",
+            "server_principal_name",
+            "session_server_principal_name",
+            "database_principal_name",
+        ],
+    ) {
+        copy_if_empty(&mut detail.user, value);
+    } else if matches_name(
+        name,
+        &[
+            "Client",
+            "ClientIP",
+            "ClientAddress",
+            "IpAddress",
+            "IPAddress",
+            "RemoteAddress",
+            "client_ip",
+        ],
+    ) {
+        copy_if_empty(&mut detail.client_address, value);
+    } else if matches_name(
+        name,
+        &["Reason", "FailureReason", "ErrorMessage", "failure_reason"],
+    ) {
+        copy_if_empty(&mut detail.failure_reason, value);
+    } else if detail.event_id == 33205
+        && matches_name(name, &["Succeeded", "succeeded", "IsSuccess"])
+    {
+        detail.result = match value.trim().to_ascii_lowercase().as_str() {
+            "true" | "1" | "yes" => "成功".to_owned(),
+            "false" | "0" | "no" => "失败".to_owned(),
+            _ => detail.result.clone(),
+        };
+    }
+}
+
+fn extract_message_fields(detail: &mut MssqlDetail, message: &str) {
+    if detail.user.is_empty() {
+        for marker in ["Login failed for user '", "Login succeeded for user '"] {
+            if let Some(value) = text_between(message, marker, "'") {
+                detail.user = value.to_owned();
+                break;
+            }
+        }
+    }
+
+    if detail.client_address.is_empty() {
+        if let Some(value) = text_between(message, "[CLIENT: ", "]") {
+            detail.client_address = value.trim().to_owned();
+        }
+    }
+
+    if detail.failure_reason.is_empty()
+        && let Some(start) = message.find("Reason:")
+    {
+        let reason = &message[start + "Reason:".len()..];
+        let reason = reason
+            .split("[CLIENT:")
+            .next()
+            .unwrap_or(reason)
+            .trim()
+            .trim_end_matches('.');
+        if !reason.is_empty() {
+            detail.failure_reason = reason.to_owned();
+        }
+    }
+}
+
+fn text_between<'a>(text: &'a str, start: &str, end: &str) -> Option<&'a str> {
+    let value = &text[text.find(start)? + start.len()..];
+    Some(&value[..value.find(end)?])
+}
+
+fn matches_name(name: &str, candidates: &[&str]) -> bool {
+    candidates
+        .iter()
+        .any(|candidate| name.eq_ignore_ascii_case(candidate))
+}
+
+fn copy_if_empty(target: &mut String, value: &str) {
+    if target.is_empty() {
+        *target = value.to_owned();
+    }
 }
 
 fn classify(provider: &str, id: u16) -> (&'static str, &'static str) {
@@ -165,17 +277,60 @@ mod tests {
     #[test]
     fn parses_mssql_and_keeps_variable_fields_in_details() {
         let event = parse(
-            r#"<Event><System><Provider Name="MSSQL$SQLEXPRESS"/><EventID>18456</EventID><TimeCreated SystemTime="2026-08-13T10:00:00Z"/></System><EventData><Data Name="LoginName">sa</Data><Data Name="State">8</Data><Data>10.0.0.8</Data></EventData></Event>"#,
+            r#"<Event><System><Provider Name="MSSQL$SQLEXPRESS"/><EventID>18456</EventID><TimeCreated SystemTime="2026-08-13T10:00:00Z"/></System><EventData><Data Name="LoginName">sa</Data><Data Name="ClientAddress">10.0.0.8</Data><Data Name="FailureReason">密码不匹配</Data><Data Name="State">8</Data></EventData></Event>"#,
         );
         assert!(event.include());
         let values = event.fields();
         assert!(values.iter().any(|(name, value)| *name == "数据库实例"
             && matches!(value, CellValue::Text(value) if value == "SQLEXPRESS")));
-        assert!(values.iter().any(|(name, value)| *name == "详细信息" && matches!(value, CellValue::Text(value) if value.contains("LoginName: sa") && value.contains("State: 8") && value.contains("Data3: 10.0.0.8"))));
+        assert_text_field(&values, "结果", "失败");
+        assert_text_field(&values, "用户", "sa");
+        assert_text_field(&values, "客户端地址", "10.0.0.8");
+        assert_text_field(&values, "失败原因", "密码不匹配");
+        assert!(values.iter().any(|(name, value)| *name == "详细信息" && matches!(value, CellValue::Text(value) if value.contains("LoginName: sa") && value.contains("State: 8"))));
+    }
+
+    #[test]
+    fn extracts_login_fields_from_standard_message() {
+        let event = parse(
+            r#"<Event><System><Provider Name="MSSQLSERVER"/><EventID>18456</EventID></System><EventData><Data>Login failed for user 'sa'. Reason: Password did not match that for the login provided. [CLIENT: 192.168.1.8]</Data><Data>18456</Data><Data>14</Data><Data>8</Data></EventData></Event>"#,
+        );
+        let values = event.fields();
+
+        assert_text_field(&values, "用户", "sa");
+        assert_text_field(&values, "客户端地址", "192.168.1.8");
+        assert_text_field(
+            &values,
+            "失败原因",
+            "Password did not match that for the login provided",
+        );
+    }
+
+    #[test]
+    fn parses_audit_user_client_and_result() {
+        let event = parse(
+            r#"<Event><System><Provider Name="MSSQLSERVER"/><EventID>33205</EventID></System><EventData><Data Name="session_server_principal_name">DOMAIN\analyst</Data><Data Name="client_ip">10.0.0.20</Data><Data Name="succeeded">false</Data></EventData></Event>"#,
+        );
+        let values = event.fields();
+
+        assert_text_field(&values, "结果", "失败");
+        assert_text_field(&values, "用户", r"DOMAIN\analyst");
+        assert_text_field(&values, "客户端地址", "10.0.0.20");
     }
 
     #[test]
     fn rejects_same_event_id_from_other_provider() {
         assert!(!parse(r#"<Event><System><Provider Name="Other"/><EventID>18456</EventID></System></Event>"#).include());
+    }
+
+    fn assert_text_field(
+        values: &[(&'static str, CellValue<'_>)],
+        expected_name: &str,
+        expected_value: &str,
+    ) {
+        assert!(values.iter().any(|(name, value)| {
+            *name == expected_name
+                && matches!(value, CellValue::Text(value) if value == expected_value)
+        }));
     }
 }

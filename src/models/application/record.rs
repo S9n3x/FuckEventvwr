@@ -32,6 +32,10 @@ impl EventRecord for ApplicationDetail {
                 CellValue::text(&self.application_version),
             ),
             (
+                m.transaction_identifier.title,
+                CellValue::text(&self.transaction_identifier),
+            ),
+            (
                 m.application_path.title,
                 CellValue::text(&self.application_path),
             ),

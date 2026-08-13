@@ -200,13 +200,24 @@ fn map_msi(detail: &mut ApplicationDetail, data: &[String]) {
             append_raw_if_present(&mut detail.raw_data, "厂商", data.get(4));
         }
         1040 | 1042 => {
-            copy_if_present(&mut detail.application_path, data.first());
-            if let Some(path) = data.first() {
-                detail.application_name = std::path::Path::new(path)
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .unwrap_or_default()
-                    .to_owned();
+            if let Some(identifier) = data
+                .first()
+                .filter(|value| !value.is_empty() && *value != "(NULL)")
+            {
+                detail.transaction_identifier = identifier.clone();
+                let path = std::path::Path::new(identifier);
+                if path
+                    .extension()
+                    .and_then(|extension| extension.to_str())
+                    .is_some_and(|extension| extension.eq_ignore_ascii_case("msi"))
+                {
+                    detail.application_path = identifier.clone();
+                    detail.application_name = path
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .unwrap_or_default()
+                        .to_owned();
+                }
             }
         }
         11707 | 11708 | 11724 => {
@@ -424,6 +435,26 @@ mod tests {
         assert!(transaction.iter().any(|(name, value)| {
             *name == "程序路径" && value == r"C:\Temp\CC Switch-installer.msi"
         }));
+        assert!(transaction.iter().any(|(name, value)| {
+            *name == "事务标识" && value == r"C:\Temp\CC Switch-installer.msi"
+        }));
+
+        let named_transaction = fields(
+            r#"<Event><System><Provider Name="MsiInstaller"/><EventID>1042</EventID></System><EventData><Data>XdrAgentCleanerTransaction</Data><Data>17572</Data></EventData></Event>"#,
+        );
+        assert!(named_transaction.iter().any(|(name, value)| {
+            *name == "事务标识" && value == "XdrAgentCleanerTransaction"
+        }));
+        assert!(
+            named_transaction
+                .iter()
+                .any(|(name, value)| { *name == "程序名称" && value.is_empty() })
+        );
+        assert!(
+            named_transaction
+                .iter()
+                .any(|(name, value)| { *name == "程序路径" && value.is_empty() })
+        );
     }
 
     #[test]

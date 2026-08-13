@@ -179,6 +179,15 @@ fn parse_task_actions(task_xml: &str) -> Vec<String> {
                     );
                 }
             }
+            Ok(XmlEvent::CData(ref element)) if current_action.is_some() => {
+                if let Ok(value) = element.decode() {
+                    assign_action_field(
+                        current_action.as_mut().expect("action checked above"),
+                        &current_field,
+                        value.as_ref(),
+                    );
+                }
+            }
             Ok(XmlEvent::End(ref element)) => {
                 let qualified_name = element.name();
                 let name = local_name(qualified_name.as_ref());
@@ -268,7 +277,7 @@ mod tests {
     #[test]
     fn recognizes_updated_task_content_and_operational_users() {
         let updated = parse(
-            r#"<Event><System><Provider Name="Microsoft-Windows-Security-Auditing"/><EventID>4702</EventID></System><EventData><Data Name="TaskName">\Updated</Data><Data Name="TaskContentNew">&lt;Task&gt;&lt;Actions&gt;&lt;ComHandler&gt;&lt;ClassId&gt;{00000000-0000-0000-0000-000000000001}&lt;/ClassId&gt;&lt;Data&gt;payload&lt;/Data&gt;&lt;/ComHandler&gt;&lt;/Actions&gt;&lt;/Task&gt;</Data></EventData></Event>"#,
+            r#"<Event><System><Provider Name="Microsoft-Windows-Security-Auditing"/><EventID>4702</EventID></System><EventData><Data Name="TaskName">\Updated</Data><Data Name="TaskContentNew">&lt;Task&gt;&lt;Actions&gt;&lt;ComHandler&gt;&lt;ClassId&gt;{00000000-0000-0000-0000-000000000001}&lt;/ClassId&gt;&lt;Data&gt;&lt;![CDATA[payload]]&gt;&lt;/Data&gt;&lt;/ComHandler&gt;&lt;/Actions&gt;&lt;/Task&gt;</Data></EventData></Event>"#,
         );
         assert_eq!(
             text_field(updated.as_ref(), "执行动作"),

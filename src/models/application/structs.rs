@@ -11,6 +11,7 @@ pub struct ApplicationDetail {
     pub report_type: String,
     pub application_name: String,
     pub application_version: String,
+    pub transaction_identifier: String,
     pub application_path: String,
     pub fault_module: String,
     pub fault_module_version: String,
@@ -29,6 +30,7 @@ pub struct ApplicationMeta {
     pub report_type: FieldMeta,
     pub application_name: FieldMeta,
     pub application_version: FieldMeta,
+    pub transaction_identifier: FieldMeta,
     pub application_path: FieldMeta,
     pub fault_module: FieldMeta,
     pub fault_module_version: FieldMeta,
@@ -54,6 +56,9 @@ pub static APPLICATION_META: ApplicationMeta = ApplicationMeta {
     },
     application_version: FieldMeta {
         title: "程序版本"
+    },
+    transaction_identifier: FieldMeta {
+        title: "事务标识"
     },
     application_path: FieldMeta {
         title: "程序路径"

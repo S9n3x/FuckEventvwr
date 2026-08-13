@@ -154,7 +154,7 @@ fn map_wer(detail: &mut ApplicationDetail, data: &[String]) -> bool {
         detail.application_name = data.get(5).cloned().unwrap_or_default();
         detail.application_version = data.get(6).cloned().unwrap_or_default();
         detail.fault_module = data.get(8).cloned().unwrap_or_default();
-        detail.fault_module_path = data.get(9).cloned().unwrap_or_default();
+        detail.fault_module_version = data.get(9).cloned().unwrap_or_default();
         detail.exception_code = data.get(11).cloned().unwrap_or_default();
         return true;
     }
@@ -170,6 +170,7 @@ fn map_application_error(detail: &mut ApplicationDetail, data: &[String]) {
     copy_if_present(&mut detail.application_name, data.first());
     copy_if_present(&mut detail.application_version, data.get(1));
     copy_if_present(&mut detail.fault_module, data.get(3));
+    copy_if_present(&mut detail.fault_module_version, data.get(4));
     copy_if_present(&mut detail.exception_code, data.get(6));
     copy_if_present(&mut detail.process_id, data.get(8));
     copy_if_present(&mut detail.application_path, data.get(10));
@@ -271,6 +272,9 @@ fn is_known_name(name: &str) -> bool {
             | "FaultModule"
             | "ModuleName"
             | "P4"
+            | "FaultModuleVersion"
+            | "ModuleVersion"
+            | "P5"
             | "FaultModulePath"
             | "ModulePath"
             | "ExceptionCode"
@@ -299,6 +303,9 @@ fn assign_named(detail: &mut ApplicationDetail, name: &str, value: &str) {
         "ApplicationPath" | "AppPath" | "P10" => detail.application_path = value.to_owned(),
         "FaultModuleName" | "FaultModule" | "ModuleName" | "P4" => {
             detail.fault_module = value.to_owned()
+        }
+        "FaultModuleVersion" | "ModuleVersion" | "P5" => {
+            detail.fault_module_version = value.to_owned()
         }
         "FaultModulePath" | "ModulePath" => detail.fault_module_path = value.to_owned(),
         "ExceptionCode" | "P7" => detail.exception_code = value.to_owned(),
@@ -434,6 +441,24 @@ mod tests {
             *name == "进程ID"
                 && matches!(value, crate::parser::definition::CellValue::Text(value) if value.is_empty())
         }));
+    }
+
+    #[test]
+    fn maps_wer_module_version_without_treating_it_as_a_path() {
+        let values = fields(
+            r#"<Event><System><Provider Name="Windows Error Reporting"/><EventID>1001</EventID></System><EventData><Data>bucket</Data><Data>5</Data><Data>APPCRASH</Data><Data>Not available</Data><Data>0</Data><Data>demo.exe</Data><Data>1.2.3.4</Data><Data>app-stamp</Data><Data>ntdll.dll</Data><Data>10.0.26100.3915</Data><Data>module-stamp</Data><Data>c0000005</Data></EventData></Event>"#,
+        );
+
+        assert!(
+            values.iter().any(|(name, value)| {
+                *name == "故障模块版本" && value == "10.0.26100.3915"
+            })
+        );
+        assert!(
+            values
+                .iter()
+                .any(|(name, value)| *name == "故障模块路径" && value.is_empty())
+        );
     }
 
     #[test]

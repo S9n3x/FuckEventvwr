@@ -9,6 +9,11 @@ impl EventRecord for ScheduledTaskDetail {
     fn type_name(&self) -> &'static str {
         "ScheduledTask"
     }
+
+    fn include(&self) -> bool {
+        self.include
+    }
+
     fn fields(&self) -> Vec<(&'static str, CellValue<'_>)> {
         let m = &SCHEDULED_TASK_META;
         vec![

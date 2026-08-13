@@ -2,6 +2,8 @@ use crate::parser::definition::FieldMeta;
 
 #[derive(Debug, Default)]
 pub struct ScheduledTaskDetail {
+    pub include: bool,
+    pub provider: String,
     pub time: String,
     pub event_id: u16,
     pub description: &'static str,

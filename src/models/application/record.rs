@@ -37,6 +37,10 @@ impl EventRecord for ApplicationDetail {
             ),
             (m.fault_module.title, CellValue::text(&self.fault_module)),
             (
+                m.fault_module_version.title,
+                CellValue::text(&self.fault_module_version),
+            ),
+            (
                 m.fault_module_path.title,
                 CellValue::text(&self.fault_module_path),
             ),

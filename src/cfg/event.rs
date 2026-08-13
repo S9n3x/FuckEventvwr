@@ -29,13 +29,13 @@ impl EventId {
             33205 => "MSSQL: SQL Server Audit 审计事件",
 
             // Authentication
-            4624 => "账户已成功登录 (用户验证成功)",
-            4625 => "账户登录失败 (凭据错误或不存在)",
-            4648 => "使用显式凭据尝试登录 (Runas/进程切换)",
-            4672 => "指派给新登录的特殊特权 (管理员登录)",
+            4624 => "账户已成功登录",
+            4625 => "账户登录失败",
+            4648 => "使用显式凭据尝试登录",
+            4672 => "特殊特权已指派给新登录",
             4740 => "账户已被锁定 (安全策略锁定)",
             4768 => "Kerberos 身份验证票据 (TGT) 请求",
-            4771 => "Kerberos 预认证失败 (暴力破解检测)",
+            4771 => "Kerberos 预身份验证失败",
             4776 => "NTLM 凭据验证尝试",
             4769 => "Kerberos 服务票据 (TGS) 请求",
 
@@ -96,5 +96,19 @@ impl EventId {
 impl From<u16> for EventId {
     fn from(v: u16) -> Self {
         EventId(v)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn authentication_descriptions_do_not_infer_causes_or_intent() {
+        assert_eq!(EventId(4624).description(), "账户已成功登录");
+        assert_eq!(EventId(4625).description(), "账户登录失败");
+        assert_eq!(EventId(4648).description(), "使用显式凭据尝试登录");
+        assert_eq!(EventId(4672).description(), "特殊特权已指派给新登录");
+        assert_eq!(EventId(4771).description(), "Kerberos 预身份验证失败");
     }
 }

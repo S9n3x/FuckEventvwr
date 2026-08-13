@@ -13,6 +13,7 @@ pub struct ApplicationDetail {
     pub application_version: String,
     pub application_path: String,
     pub fault_module: String,
+    pub fault_module_version: String,
     pub fault_module_path: String,
     pub exception_code: String,
     pub process_id: String,
@@ -30,6 +31,7 @@ pub struct ApplicationMeta {
     pub application_version: FieldMeta,
     pub application_path: FieldMeta,
     pub fault_module: FieldMeta,
+    pub fault_module_version: FieldMeta,
     pub fault_module_path: FieldMeta,
     pub exception_code: FieldMeta,
     pub process_id: FieldMeta,
@@ -58,6 +60,9 @@ pub static APPLICATION_META: ApplicationMeta = ApplicationMeta {
     },
     fault_module: FieldMeta {
         title: "故障模块"
+    },
+    fault_module_version: FieldMeta {
+        title: "故障模块版本",
     },
     fault_module_path: FieldMeta {
         title: "故障模块路径",

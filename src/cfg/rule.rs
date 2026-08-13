@@ -10,6 +10,13 @@ impl Models {
                 ],
             },
 
+            Models::Mssql => ModelRule {
+                files: vec!["Application.evtx"],
+                ids: vec![
+                    15281, 15457, 17806, 17832, 17836, 18452, 18454, 18456, 18470, 33205,
+                ],
+            },
+
             // 验证相关
             Models::Authentication => ModelRule {
                 files: vec!["Security.evtx"],

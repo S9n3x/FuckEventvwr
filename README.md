@@ -15,6 +15,8 @@
 Usage: Saga.exe [OPTIONS] [COMMAND]
 
 Commands:
+  Application        程序活动与安装, EventID: 1000, 1001, 1002, 1026, 1033, 1034, 1040, 1042, 11707, 11708, 11724
+  MSSQL              MSSQL 安全事件, EventID: 15281, 15457, 17806, 17832, 17836, 18452, 18454, 18456, 18470, 33205
   Authentication     验证相关信息, EventID: 4624, 4625, 4648, 4672, 4740, 4768, 4771, 4776
   Session            会话生命周期, EventID: 4634, 4647, 21, 22, 23, 24, 25, 40, 1149
   AccountManagement  账户管理, EventID: 4720, 4722, 4723, 4724, 4725, 4726, 4738, 4740, 4767
@@ -87,6 +89,8 @@ Saga.exe PowerShell -p "D:\案件\事件日志" -o csv
 
 | 模型                | 日志文件                               | 说明                                 |
 | ------------------- | -------------------------------------- | ------------------------------------ |
+| `Application`       | Application.evtx                       | 程序异常、安装活动                   |
+| `MSSQL`             | Application.evtx                       | MSSQL 认证、协议、配置与审计事件     |
 | `Authentication`    | Security.evtx                          | 登录成功/失败、NTLM/Kerberos 验证    |
 | `Session`           | Security.evtx, TerminalServices\*.evtx | RDP 会话创建、断连、重连             |
 | `AccountManagement` | Security.evtx                          | 账户创建、删除、启用、禁用、密码修改 |

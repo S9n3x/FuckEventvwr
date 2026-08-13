@@ -1,4 +1,4 @@
-﻿mod cfg;
+mod cfg;
 mod cli;
 mod models;
 mod out;
@@ -13,6 +13,7 @@ fn main() {
     let parsed = parser();
     let report_path = parsed.elevated_report.clone();
     let cfg = parsed.config;
+    let model_name = cfg.model.command_name();
     let files = match required_evtx_files(&cfg) {
         Ok(files) => files,
         Err(error)
@@ -62,15 +63,24 @@ fn main() {
         .unwrap();
 
     let start = std::time::Instant::now();
-    let total = rt.block_on(run_parser(cfg, files));
-    finish(
-        report_path,
-        0,
+    let summary = rt.block_on(run_parser(cfg, files));
+    let result = if summary.matched == 0 {
         format!(
-            "总计扫描到的事件记录数: {total}\n总耗时: {:?}",
+            "总计扫描到的事件记录数: {}\n未发现符合 {} 模块规则的事件，未生成导出文件。\n总耗时: {:?}",
+            summary.scanned,
+            model_name,
             start.elapsed()
-        ),
-    );
+        )
+    } else {
+        format!(
+            "总计扫描到的事件记录数: {}\n符合 {} 模块规则的事件数: {}\n总耗时: {:?}",
+            summary.scanned,
+            model_name,
+            summary.matched,
+            start.elapsed()
+        )
+    };
+    finish(report_path, 0, result);
 }
 
 fn print_elevated_result(message: &str, exit_code: u32) {

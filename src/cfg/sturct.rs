@@ -17,8 +17,11 @@ pub struct ModelRule {
 #[derive(Subcommand, Debug, Clone)]
 #[command(rename_all = "verbatim")]
 pub enum Models {
-    /// 程序活动, EventID: 1000, 1001, 1002, 1026, 1033, 1034, 1040, 1042, 11707, 11708, 11724
+    /// 程序活动与安装, EventID: 1000, 1001, 1002, 1026, 1033, 1034, 1040, 1042, 11707, 11708, 11724
     Application,
+    /// MSSQL 安全事件, EventID: 15281, 15457, 17806, 17832, 17836, 18452, 18454, 18456, 18470, 33205
+    #[command(name = "MSSQL", alias = "Mssql")]
+    Mssql,
     /// 验证相关信息, EventID: 4624, 4625, 4648, 4672, 4740, 4768, 4771, 4776，4769
     Authentication,
     /// 会话生命周期, EventID: 4634, 4647, 21, 22, 23, 24, 25, 40, 1149
@@ -37,6 +40,7 @@ impl Models {
     pub const fn command_name(&self) -> &'static str {
         match self {
             Self::Application => "Application",
+            Self::Mssql => "MSSQL",
             Self::Authentication => "Authentication",
             Self::Session => "Session",
             Self::AccountManagement => "AccountManagement",

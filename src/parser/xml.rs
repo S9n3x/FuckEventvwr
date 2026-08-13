@@ -2,6 +2,7 @@ use crate::cfg::sturct::Models;
 use crate::models::account_management::xml::parse as parse_account_management;
 use crate::models::application::xml::parse as parse_application;
 use crate::models::authentication::xml::parse as parse_authentication;
+use crate::models::mssql::xml::parse as parse_mssql;
 use crate::models::powershell::xml::parse as parse_powershell;
 use crate::models::scheduled_task::xml::parse as parse_scheduled_task;
 use crate::models::service_control::xml::parse as parse_service_control;
@@ -16,6 +17,7 @@ impl XmlParser for Models {
     fn parse(&self, xml: &str) -> Box<dyn EventRecord + Send> {
         match self {
             Models::Application => parse_application(xml),
+            Models::Mssql => parse_mssql(xml),
             Models::Authentication => parse_authentication(xml),
             Models::Session => parse_session(xml),
             Models::AccountManagement => parse_account_management(xml),

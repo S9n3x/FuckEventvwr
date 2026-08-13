@@ -13,6 +13,11 @@ use tokio::task;
 
 const BATCH_SIZE: usize = 500;
 
+pub struct ParseSummary {
+    pub scanned: usize,
+    pub matched: usize,
+}
+
 /// 查找当前模型需要的日志文件，并在开始解析前验证它们可读取。
 /// 该预检用于在普通权限不足时触发一次按需提权，而非无条件请求管理员权限。
 pub fn required_evtx_files(cfg: &Config) -> io::Result<Vec<PathBuf>> {
@@ -45,7 +50,7 @@ pub fn required_evtx_files(cfg: &Config) -> io::Result<Vec<PathBuf>> {
     Ok(files)
 }
 
-pub async fn run_parser(cfg: Config, files: Vec<PathBuf>) -> usize {
+pub async fn run_parser(cfg: Config, files: Vec<PathBuf>) -> ParseSummary {
     let rule = &cfg.model.get_model_rule();
 
     // 提高匹配效率
@@ -141,9 +146,9 @@ pub async fn run_parser(cfg: Config, files: Vec<PathBuf>) -> usize {
     }
 
     // 导出模块
-    let total = *total_num.lock().unwrap() as usize;
-    crate::out::export::run(collect_handle.await.unwrap_or_default(), cfg.format);
-    total
+    let scanned = *total_num.lock().unwrap() as usize;
+    let matched = crate::out::export::run(collect_handle.await.unwrap_or_default(), cfg.format);
+    ParseSummary { scanned, matched }
 }
 
 pub fn list_evtx(dir: &Path) -> io::Result<Vec<PathBuf>> {

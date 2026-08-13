@@ -16,6 +16,18 @@ impl EventId {
             11708 => "MsiInstaller: 产品安装失败",
             11724 => "MsiInstaller: 产品卸载完成",
 
+            // MSSQL
+            15281 => "MSSQL: 尝试访问被安全配置禁用的功能",
+            15457 => "MSSQL: 服务器配置项已更改",
+            17806 => "MSSQL: SSPI 身份验证握手失败",
+            17832 => "MSSQL: 登录数据包结构无效",
+            17836 => "MSSQL: 网络数据包长度无效",
+            18452 => "MSSQL: Windows 身份验证来源域不受信任",
+            18454 => "MSSQL: Windows 身份验证登录成功",
+            18456 => "MSSQL: 登录失败",
+            18470 => "MSSQL: 已禁用账户登录失败",
+            33205 => "MSSQL: SQL Server Audit 审计事件",
+
             // Authentication
             4624 => "账户已成功登录 (用户验证成功)",
             4625 => "账户登录失败 (凭据错误或不存在)",

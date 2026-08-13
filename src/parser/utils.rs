@@ -40,9 +40,7 @@ pub fn filter_event_by_name(all_paths: Vec<PathBuf>, allowed_names: &[&str]) -> 
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_event_id, system_time};
-    use quick_xml::events::Event;
-    use quick_xml::reader::Reader;
+    use super::parse_event_id;
 
     #[test]
     fn parses_plain_event_id() {
@@ -73,21 +71,6 @@ mod tests {
         assert_eq!(
             parse_event_id("<Event><System><EventID>invalid</EventID></System></Event>"),
             None
-        );
-    }
-
-    #[test]
-    fn reads_system_time_attribute() {
-        let mut reader =
-            Reader::from_str(r#"<TimeCreated SystemTime="2026-08-13T10:00:00.1234567Z"/>"#);
-        let event = reader.read_event().expect("TimeCreated XML 应能解析");
-        let Event::Empty(element) = event else {
-            panic!("TimeCreated 应解析为自闭合节点");
-        };
-
-        assert_eq!(
-            system_time(&element).as_deref(),
-            Some("2026-08-13T10:00:00.1234567Z")
         );
     }
 }

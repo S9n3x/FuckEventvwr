@@ -1,5 +1,6 @@
 use super::structs::ApplicationDetail;
 use crate::parser::definition::EventRecord;
+use crate::parser::utils::system_time;
 use quick_xml::events::Event as XmlEvent;
 use quick_xml::reader::Reader;
 
@@ -22,11 +23,12 @@ pub fn parse(xml: &str) -> Box<dyn EventRecord + Send> {
             Ok(XmlEvent::Empty(ref e)) if e.name().as_ref() == b"Provider" => {
                 read_attribute(e, b"Name", &mut detail.provider);
             }
-            Ok(XmlEvent::Start(ref e)) if e.name().as_ref() == b"TimeCreated" => {
-                read_attribute(e, b"SystemTime", &mut detail.time);
-            }
-            Ok(XmlEvent::Empty(ref e)) if e.name().as_ref() == b"TimeCreated" => {
-                read_attribute(e, b"SystemTime", &mut detail.time);
+            Ok(XmlEvent::Start(ref e)) | Ok(XmlEvent::Empty(ref e))
+                if e.name().as_ref() == b"TimeCreated" =>
+            {
+                if let Some(time) = system_time(e) {
+                    detail.time = time;
+                }
             }
             Ok(XmlEvent::Start(ref e)) if e.name().as_ref() == b"EventID" => {
                 if let Ok(text) = reader.read_text(e.name()) {

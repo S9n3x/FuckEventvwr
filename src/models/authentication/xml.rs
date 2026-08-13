@@ -1,6 +1,7 @@
 use super::structs::AuthenticationDetail;
 use crate::cfg::event::EventId;
 use crate::parser::definition::EventRecord;
+use crate::parser::utils::system_time;
 use quick_xml::events::Event as XmlEvent;
 use quick_xml::reader::Reader;
 
@@ -21,13 +22,11 @@ pub fn parse(xml: &str) -> Box<dyn EventRecord + Send> {
     loop {
         match reader.read_event_into(&mut buf) {
             // ── TimeCreated SystemTime ──────────────────────────────────
-            Ok(XmlEvent::Start(ref e)) if e.name().as_ref() == b"TimeCreated" => {
-                for attr in e.attributes().flatten() {
-                    if attr.key.as_ref() == b"SystemTime" {
-                        if let Ok(v) = attr.unescape_value() {
-                            detail.time = v.into_owned();
-                        }
-                    }
+            Ok(XmlEvent::Start(ref e)) | Ok(XmlEvent::Empty(ref e))
+                if e.name().as_ref() == b"TimeCreated" =>
+            {
+                if let Some(time) = system_time(e) {
+                    detail.time = time;
                 }
             }
 

@@ -10,9 +10,6 @@ pub struct MssqlDetail {
     pub event_type: &'static str,
     pub result: String,
     pub database_instance: String,
-    pub user: String,
-    pub client_address: String,
-    pub failure_reason: String,
     pub raw_data: String,
 }
 
@@ -24,9 +21,6 @@ pub struct MssqlMeta {
     pub event_type: FieldMeta,
     pub result: FieldMeta,
     pub database_instance: FieldMeta,
-    pub user: FieldMeta,
-    pub client_address: FieldMeta,
-    pub failure_reason: FieldMeta,
     pub raw_data: FieldMeta,
 }
 
@@ -41,13 +35,6 @@ pub static MSSQL_META: MssqlMeta = MssqlMeta {
     result: FieldMeta { title: "结果" },
     database_instance: FieldMeta {
         title: "数据库实例",
-    },
-    user: FieldMeta { title: "用户" },
-    client_address: FieldMeta {
-        title: "客户端地址",
-    },
-    failure_reason: FieldMeta {
-        title: "失败原因"
     },
     raw_data: FieldMeta {
         title: "详细信息"

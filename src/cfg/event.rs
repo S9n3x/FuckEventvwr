@@ -23,7 +23,7 @@ impl EventId {
             17832 => "MSSQL: 登录数据包结构无效",
             17836 => "MSSQL: 网络数据包长度无效",
             18452 => "MSSQL: Windows 身份验证来源域不受信任",
-            18454 => "MSSQL: Windows 身份验证登录成功",
+            18454 => "MSSQL: SQL Server 身份验证登录成功",
             18456 => "MSSQL: 登录失败",
             18470 => "MSSQL: 已禁用账户登录失败",
             33205 => "MSSQL: SQL Server Audit 审计事件",

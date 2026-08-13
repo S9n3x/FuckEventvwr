@@ -1,4 +1,5 @@
 pub mod account_management;
+pub mod application;
 pub mod authentication;
 pub mod powershell;
 pub mod scheduled_task;

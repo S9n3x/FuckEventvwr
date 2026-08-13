@@ -3,6 +3,7 @@ use super::csv::to_csv;
 use crate::cfg::sturct::OutFormat;
 
 pub fn run(mut data: Vec<Box<dyn crate::parser::definition::EventRecord + Send>>, of: OutFormat) {
+    data.retain(|record| record.include());
     // 数据排序
     data.sort_by(|a, b| b.time().cmp(a.time()));
     match of {

@@ -3,6 +3,13 @@ use super::sturct::*;
 impl Models {
     pub fn get_model_rule(&self) -> ModelRule {
         match self {
+            Models::Application => ModelRule {
+                files: vec!["Application.evtx"],
+                ids: vec![
+                    1000, 1001, 1002, 1026, 1033, 1034, 1040, 1042, 11707, 11708, 11724,
+                ],
+            },
+
             // 验证相关
             Models::Authentication => ModelRule {
                 files: vec!["Security.evtx"],

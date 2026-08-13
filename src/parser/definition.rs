@@ -40,6 +40,10 @@ pub trait EventRecord {
     fn time(&self) -> &str;
     fn type_name(&self) -> &'static str;
 
+    fn include(&self) -> bool {
+        true
+    }
+
     fn fields(&self) -> Vec<(&'static str, CellValue<'_>)>;
 
     fn csv_header(&self) -> String {

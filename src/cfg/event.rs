@@ -3,6 +3,19 @@ pub struct EventId(pub u16);
 impl EventId {
     pub fn description(&self) -> &'static str {
         match self.0 {
+            // Application
+            1000 => "Application Error: 应用程序崩溃",
+            1001 => "Windows Error Reporting: 程序故障报告",
+            1002 => "Application Hang: 应用程序卡死",
+            1026 => ".NET Runtime: 未处理的运行时异常",
+            1033 => "MsiInstaller: 产品安装信息",
+            1034 => "MsiInstaller: 产品卸载信息",
+            1040 => "MsiInstaller: 安装事务开始",
+            1042 => "MsiInstaller: 安装事务结束",
+            11707 => "MsiInstaller: 产品安装成功",
+            11708 => "MsiInstaller: 产品安装失败",
+            11724 => "MsiInstaller: 产品卸载完成",
+
             // Authentication
             4624 => "账户已成功登录 (用户验证成功)",
             4625 => "账户登录失败 (凭据错误或不存在)",

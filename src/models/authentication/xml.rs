@@ -15,13 +15,11 @@ pub fn parse(xml: &str) -> Box<dyn EventRecord + Send> {
     };
     let mut buf = Vec::with_capacity(512);
 
-    // 用静态字符串标记当前 Data Name，匹配时直接比较 &[u8]
     let mut current_data_name_bytes: &'static [u8] = b"";
     let mut current_extra_name = String::new();
 
     loop {
         match reader.read_event_into(&mut buf) {
-            // ── TimeCreated SystemTime ──────────────────────────────────
             Ok(XmlEvent::Start(ref e)) | Ok(XmlEvent::Empty(ref e))
                 if e.name().as_ref() == b"TimeCreated" =>
             {
@@ -30,30 +28,25 @@ pub fn parse(xml: &str) -> Box<dyn EventRecord + Send> {
                 }
             }
 
-            // ── EventID ────────────────────────────────────────────────
             Ok(XmlEvent::Start(ref e)) if e.name().as_ref() == b"EventID" => {
-                if let Ok(text) = reader.read_text(e.name()) {
-                    if let Ok(id) = text.parse::<u16>() {
-                        detail.event_id = id;
-                        detail.description = EventId(id).description();
-                    }
+                if let Ok(text) = reader.read_text(e.name())
+                    && let Ok(id) = text.parse::<u16>()
+                {
+                    detail.event_id = id;
+                    detail.description = EventId(id).description();
                 }
             }
 
-            // ── Data Name="..." ────────────────────────────────────────
-            // 只记录我们关心的字段名，其余直接忽略，不做 String 分配
             Ok(XmlEvent::Start(ref e)) if e.name().as_ref() == b"Data" => {
                 current_data_name_bytes = b""; // 先清空
                 for attr in e.attributes().flatten() {
                     if attr.key.as_ref() == b"Name" {
-                        // 直接在字节层面匹配，零拷贝
                         current_data_name_bytes = match attr.value.as_ref() {
                             b"SubjectUserName" => b"SubjectUserName",
                             b"TargetUserName" => b"TargetUserName",
                             b"IpAddress" => b"IpAddress",
                             b"LogonType" => b"LogonType",
                             b"Status" => b"Status",
-                            b"SubStatus" => b"SubStatus",
                             other => {
                                 current_extra_name.clear();
                                 current_extra_name
@@ -66,7 +59,6 @@ pub fn parse(xml: &str) -> Box<dyn EventRecord + Send> {
                 }
             }
 
-            // ── Text 内容 ──────────────────────────────────────────────
             Ok(XmlEvent::Text(ref e)) => {
                 if current_data_name_bytes.is_empty() && current_extra_name.is_empty() {
                     buf.clear();
@@ -89,11 +81,6 @@ pub fn parse(xml: &str) -> Box<dyn EventRecord + Send> {
                         b"IpAddress" => detail.ip_address = text.to_owned(),
                         b"LogonType" => detail.logon_type = text.parse().ok(),
                         b"Status" => detail.status = text.to_owned(),
-                        b"SubStatus" => {
-                            if detail.status.is_empty() {
-                                detail.status = text.to_owned();
-                            }
-                        }
                         _ => {}
                     }
 
@@ -108,7 +95,6 @@ pub fn parse(xml: &str) -> Box<dyn EventRecord + Send> {
                 current_extra_name.clear();
             }
 
-            // ── End ────────────────────────────────────────────────────
             Ok(XmlEvent::End(ref e)) => match e.name().as_ref() {
                 b"Data" => {
                     current_data_name_bytes = b"";
@@ -129,4 +115,36 @@ pub fn parse(xml: &str) -> Box<dyn EventRecord + Send> {
     }
 
     Box::new(detail)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::definition::CellValue;
+
+    #[test]
+    fn keeps_sub_status_in_details_without_adding_a_sparse_column() {
+        let event = parse(
+            r#"<Event><System><EventID>4625</EventID></System><EventData><Data Name="Status">0xc000006d</Data><Data Name="SubStatus">0xc000006a</Data></EventData></Event>"#,
+        );
+        let fields = event.fields();
+
+        assert_text_field(&fields, "状态码", "0xc000006d");
+        assert!(!fields.iter().any(|(name, _)| *name == "子状态码"));
+        assert!(fields.iter().any(|(name, value)| {
+            *name == "详细信息"
+                && matches!(value, CellValue::Text(value) if value.contains("SubStatus: 0xc000006a"))
+        }));
+    }
+
+    fn assert_text_field(
+        fields: &[(&'static str, CellValue<'_>)],
+        expected_name: &str,
+        expected_value: &str,
+    ) {
+        assert!(fields.iter().any(|(name, value)| {
+            *name == expected_name
+                && matches!(value, CellValue::Text(value) if value == expected_value)
+        }));
+    }
 }

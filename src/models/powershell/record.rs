@@ -15,11 +15,8 @@ impl EventRecord for PowerShellDetail {
             (m.time.title, CellValue::text(&self.time)),
             (m.event_id.title, CellValue::num(self.event_id)),
             (m.description.title, CellValue::text(self.description)),
-            (m.user_name.title, CellValue::text(&self.user_name)),
-            (m.host_name.title, CellValue::text(&self.host_name)),
             (m.script_block.title, CellValue::text(&self.script_block)),
             (m.command_line.title, CellValue::text(&self.command_line)),
-            (m.sequence_id.title, CellValue::text(&self.sequence_id)),
             (m.raw_data.title, CellValue::text(&self.raw_data)),
         ]
     }

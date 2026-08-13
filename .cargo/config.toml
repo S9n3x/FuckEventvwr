@@ -1,3 +1,9 @@
+[alias]
+win7 = "build --release --target x86_64-win7-windows-msvc -Z build-std=std,panic_abort"
+
+[target.x86_64-win7-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
 [target.x86_64-pc-windows-msvc]
 rustflags = ["-C", "target-feature=+crt-static"]
 

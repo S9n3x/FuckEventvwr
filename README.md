@@ -119,9 +119,26 @@ Saga.exe PowerShell -p "D:\案件\事件日志" -o csv
 
 ## 构建
 
+### 普通 Windows 版本
+
 ```powershell
 cargo build --release
 ```
+
+构建产物：`target\release\Saga.exe`
+
+### Windows 7 兼容版本
+
+Win7 构建目标需要 nightly 工具链及 `rust-src` 组件：
+
+```powershell
+rustup toolchain install nightly --component rust-src
+cargo +nightly win7
+```
+
+构建产物：`target\x86_64-win7-windows-msvc\release\Saga.exe`
+
+Win7 目标的标准库会在本地从源码构建，因此首次编译耗时较长，后续构建可复用缓存。
 
 ---
 
